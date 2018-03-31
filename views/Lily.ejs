@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Lily</title>
+  </head>
+  <body>
+    <div>
+      <div id="content-box" style="width: 300px; height: 680px; overflow-y: auto; border: 1px solid #ddd; ">
+
+      </div>
+      <form style="position:fixed; top:700px">
+        <label>Message:</label>
+        <textarea name="message-content" id="content"></textarea>
+        <button id="sendBtn" type="button">Send</button>
+      </form>
+    </div>
+  </body>
+  <script src="/javascript/socket.io.js"></script>
+  <script>
+    const socket = io('http://localhost:3000', {
+      query: {
+        name: 'Lily',
+        id: '19930303',
+      }
+    })
+
+    socket.on('connect', () => {
+      const id = socket.id
+      socket.io.opts.query = {
+        sid: id
+      }
+    })
+
+    socket.on('disconnect', (reason) => {
+      if(reason === 'io server disconnect') {
+        socket.connect()
+      }
+    })
+
+    socket.on('reconnecting', (attemptNumber) => console.log(`第${attemptNumber}次重新连接中...`));
+
+    socket.on('reconnect', (attemptNumber) => console.log(`重新连接成功,这是第${attemptNumber}次重新连接`));
+
+    socket.on('reconnect_failed', () => console.log('重新连接失败'));
+
+    socket.on('reconnect_error', (err) => console.log(`重新连接失败，失败原因:\n'${err}`));
+
+    socket.on('timestamp', (value) => console.log(`网络延迟${new Date() - value}毫秒`))
+
+    socket.on('NORMAL_MESSAGE_SERVER', (value) => {
+      const docFrag = document.createDocumentFragment()
+      const temp = document.createElement('p')
+      temp.innerHTML = 'other say: ' + value
+      docFrag.appendChild(temp)
+      document.getElementById('content-box').appendChild(docFrag)
+    })
+
+    document.getElementById('sendBtn').addEventListener('click', () => {
+      const content = document.getElementById('content').value
+      socket.emit('NORMAL_MESSAGE', {"content": content, "to": '19920317'}, (ack) => {
+        if(ack === 'success') {
+          const docFrag = document.createDocumentFragment()
+          const temp = document.createElement('p')
+          temp.innerHTML = 'I say: ' + content
+          docFrag.appendChild(temp)
+          document.getElementById('content-box').appendChild(docFrag)
+        } else {
+          alert(ack)
+        }
+      })
+    })
+
+
+  </script>
+</html>
